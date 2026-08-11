@@ -507,7 +507,7 @@ class LegacySpO2Head(nn.Module):
 #             neginf=-1e3,
 #         )
 
-#         return self.mlp(feat) * 16.5 + 83.5
+#         return self.mlp(feat) * 15.0 + 85.0
 
 
 # ---------------------------------------------------------------------
