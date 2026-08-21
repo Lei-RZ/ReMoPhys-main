@@ -113,7 +113,7 @@ class IR_SE_CNN(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.features(x)
 
-class ReliabilityAwareFusion(nn.Module):
+class CrossSpectrumAdaptiveAggregation(nn.Module):
     def __init__(self, feature_channels: int = 64):
         super().__init__()
 
@@ -559,7 +559,7 @@ class PhysNet_padding_Encoder_Decoder_MAX(nn.Module):
             input_channels=3,
             theta=theta,
         )
-        self.fusion_net = ReliabilityAwareFusion(
+        self.fusion_net = CrossSpectrumAdaptiveAggregation(
             feature_channels=64
         )
 
@@ -673,4 +673,3 @@ class PhysNet_padding_Encoder_Decoder_MAX(nn.Module):
 
 # Optional descriptive alias. The trainer-compatible class above remains primary.
 ReMoPhysNet = PhysNet_padding_Encoder_Decoder_MAX
-
