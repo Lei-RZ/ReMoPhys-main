@@ -113,23 +113,19 @@ class IR_SE_CNN(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.features(x)
 
-
-# ---------------------------------------------------------------------
-# Reliability-aware RGB/IR fusion
-# ---------------------------------------------------------------------
-class ReliabilityGatedRGBIRFusion(nn.Module):
-    """Local spatiotemporal reliability-aware RGB/IR fusion."""
-
+class ReliabilityAwareFusion(nn.Module):
     def __init__(self, feature_channels: int = 64):
         super().__init__()
+
         self.gate = nn.Sequential(
             nn.Conv3d(
-                feature_channels * 4,
+                feature_channels * 2,   # 原来是 * 4
                 feature_channels,
                 kernel_size=1,
             ),
             nn.BatchNorm3d(feature_channels),
             nn.ReLU(inplace=True),
+
             nn.Conv3d(
                 feature_channels,
                 32,
@@ -137,8 +133,14 @@ class ReliabilityGatedRGBIRFusion(nn.Module):
                 padding=1,
             ),
             nn.ReLU(inplace=True),
-            nn.Conv3d(32, 2, kernel_size=1),
+
+            nn.Conv3d(
+                32,
+                2,
+                kernel_size=1,
+            ),
         )
+
         self.refine = nn.Sequential(
             nn.Conv3d(
                 feature_channels,
@@ -148,6 +150,7 @@ class ReliabilityGatedRGBIRFusion(nn.Module):
             ),
             nn.BatchNorm3d(feature_channels),
             nn.ReLU(inplace=True),
+
             nn.Conv3d(
                 feature_channels,
                 feature_channels,
@@ -161,6 +164,7 @@ class ReliabilityGatedRGBIRFusion(nn.Module):
         x_rgb: torch.Tensor,
         x_ir: torch.Tensor,
     ) -> torch.Tensor:
+
         if x_rgb.shape != x_ir.shape:
             x_ir = F.interpolate(
                 x_ir,
@@ -173,8 +177,6 @@ class ReliabilityGatedRGBIRFusion(nn.Module):
             [
                 x_rgb,
                 x_ir,
-                torch.abs(x_rgb - x_ir),
-                x_rgb * x_ir,
             ],
             dim=1,
         )
@@ -183,12 +185,15 @@ class ReliabilityGatedRGBIRFusion(nn.Module):
             self.gate(fusion_input),
             dim=1,
         )
+
         fused = (
             modality_weight[:, 0:1] * x_rgb
             + modality_weight[:, 1:2] * x_ir
         )
-        return fused + self.refine(fused)
 
+        refined = self.refine(fused)
+
+        return fused + refined
 
 # ---------------------------------------------------------------------
 # Periodic signal heads
@@ -242,8 +247,6 @@ class MultiScalePeriodicTemporalMixer(nn.Module):
 
 
 class PeriodicSignalHead(nn.Module):
-    """Decode a 3D feature map into a one-dimensional physiological waveform."""
-
     def __init__(self, frames: int, channels: int = 64):
         super().__init__()
         self.decode = nn.Sequential(
@@ -282,8 +285,6 @@ class PeriodicSignalHead(nn.Module):
 # Task-specific adapters
 # ---------------------------------------------------------------------
 class TaskMoEAdapter(nn.Module):
-    """Task-specific low-rank mixture-of-experts adapter."""
-
     def __init__(
         self,
         channels: int = 64,
@@ -346,8 +347,6 @@ class TaskMoEAdapter(nn.Module):
 # SpO2 head
 # ---------------------------------------------------------------------
 class LegacySpO2Head(nn.Module):
-    """Estimate SpO2 from the reconstructed rPPG waveform."""
-
     def __init__(self):
         super().__init__()
         self.net = nn.Sequential(
@@ -380,12 +379,6 @@ class LegacySpO2Head(nn.Module):
 
 
 # class RatioOfRatiosSpO2Head(nn.Module):
-#     """Optional ratio-of-ratios-inspired SpO2 head.
-
-#     This class is retained in the code for future experiments, but it is not
-#     instantiated or called by the RG-MultiPhysNet model.
-#     """
-
 #     def __init__(self, feature_channels: int = 64, hidden: int = 96):
 #         super().__init__()
 #         input_dim = 24 + 12 + 3 + feature_channels
@@ -507,14 +500,14 @@ class LegacySpO2Head(nn.Module):
 #             neginf=-1e3,
 #         )
 
-#         return self.mlp(feat) * 15.0 + 85.0
+#         return self.mlp(feat) * 16.5 + 83.5
 
 
 # ---------------------------------------------------------------------
-# Complete RG-MultiPhysNet model
+# Complete ReMoPhysNet model
 # ---------------------------------------------------------------------
 class PhysNet_padding_Encoder_Decoder_MAX(nn.Module):
-    """Complete RG-MultiPhysNet model.
+    """Complete ReMoPhysNet model.
 
     The class name is retained for compatibility with the original trainer.
     """
@@ -566,7 +559,7 @@ class PhysNet_padding_Encoder_Decoder_MAX(nn.Module):
             input_channels=3,
             theta=theta,
         )
-        self.fusion_net = ReliabilityGatedRGBIRFusion(
+        self.fusion_net = ReliabilityAwareFusion(
             feature_channels=64
         )
 
@@ -679,4 +672,5 @@ class PhysNet_padding_Encoder_Decoder_MAX(nn.Module):
 
 
 # Optional descriptive alias. The trainer-compatible class above remains primary.
-RGMultiPhysNet = PhysNet_padding_Encoder_Decoder_MAX
+ReMoPhysNet = PhysNet_padding_Encoder_Decoder_MAX
+
