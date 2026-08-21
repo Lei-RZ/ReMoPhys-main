@@ -7,7 +7,7 @@ TRAIN:
   EPOCHS: 30
 
   LR: 9e-3
-  MODEL_FILE_NAME: LADH_SE_multiphysnet_stan_face_both
+  MODEL_FILE_NAME: LADH+_multiphysnet_stan_face_both
   PLOT_LOSSES_AND_LR: True
   DATA:
     INFO:
@@ -16,7 +16,7 @@ TRAIN:
       TYPE: [2] # 1 - face, 2 - face_IR
     DATASET_TYPE: "face_IR" #['face', 'face_IR', 'both'] 
     FS: 30
-    DATASET: LADH-SE 
+    DATASET: LADH+ 
     DO_PREPROCESS: False          # if first time, should be true
     DATA_FORMAT: NCDHW  #NDCHW   NCDHW
     DATA_PATH: "/gpfs/home/zhangaofeng/LeiRZ/train_p/*"  
@@ -50,7 +50,7 @@ VALID:
       TYPE: [2] # 1 - face, 2 - face_IR
     DATASET_TYPE: "face_IR" #['face', 'face_IR', 'both'] 
     FS: 30
-    DATASET: LADH-SE
+    DATASET: LADH+
     DO_PREPROCESS: False              # if first time, should be true
     DATA_FORMAT: NCDHW
     DATA_PATH: "/gpfs/home/zhangaofeng/LeiRZ/valid_p/*"      # Raw dataset path, need to be updated
@@ -86,7 +86,7 @@ TEST:
       TYPE: [2] # 1 - face, 2 - face_IR
     DATASET_TYPE: "face_IR" #['face', 'face_IR', 'both'] 
     FS: 30
-    DATASET: LADH-SE
+    DATASET: LADH+
     DO_PREPROCESS:  False          # if first time, should be true
     DATA_FORMAT: NCDHW
     DATA_PATH: "/gpfs/home/zhangaofeng/LeiRZ/datasets_day" #                   # Raw dataset path, need to be updated
